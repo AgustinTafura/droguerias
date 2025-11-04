@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consulta Stock</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔍 Consulta Stock</h1>
+      <p class="subtitle">Suizo Argentina</p>
+    </div>
+
+    <div class="form-group">
+      <label for="codigoBarras">Código de Barras:</label>
+      <input 
+        type="text" 
+        id="codigoBarras" 
+        placeholder="Ej: 79400052919"
+        autofocus
+      >
+      <button id="btnBuscar">Buscar</button>
+    </div>
+
+    <div id="loading" class="loading hidden">
+      <div class="spinner"></div>
+      <p>Consultando...</p>
+    </div>
+
+    <div id="error" class="error hidden"></div>
+
+    <div id="resultado" class="resultado hidden">
+      <div class="producto-header">
+        <h2 id="nombreProducto"></h2>
+        <span id="stockBadge" class="badge"></span>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="label">Código de Barras:</span>
+          <span id="codigoBarrasResultado" class="value"></span>
+        </div>
+        
+        <div class="info-item" id="troquelItem">
+          <span class="label">Troquel:</span>
+          <span id="troquel" class="value"></span>
+        </div>
+
+        <div class="info-item">
+          <span class="label">Stock:</span>
+          <span id="stock" class="value"></span>
+        </div>
+
+        <div class="info-item" id="descuentoItem">
+          <span class="label">Descuento:</span>
+          <span id="descuento" class="value destacado"></span>
+        </div>
+
+        <div class="info-item" id="minimoItem">
+          <span class="label">Mínimo:</span>
+          <span id="minimo" class="value"></span>
+        </div>
+      </div>
+
+      <div class="precios">
+        <div class="precio-card">
+          <span class="precio-label">Su Precio</span>
+          <span id="precio" class="precio-valor">$0.00</span>
+        </div>
+
+        <div class="precio-card destacado">
+          <span class="precio-label">Con Descuento</span>
+          <span id="precioConDescuento" class="precio-valor">$0.00</span>
+        </div>
+
+        <div class="precio-card">
+          <span class="precio-label">Público Sugerido</span>
+          <span id="precioPublico" class="precio-valor">$0.00</span>
+        </div>
+      </div>
+
+      <div class="oferta-detalle" id="ofertaDetalle"></div>
+    </div>
+
+    <div class="historial" id="historial">
+      <h3>Últimas Consultas</h3>
+      <div id="listaHistorial"></div>
+    </div>
+
+    <div class="footer">
+      <a href="https://web1.suizoargentina.com/stock" target="_blank" id="linkSitio">
+        Abrir sitio web
+      </a>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
