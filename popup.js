@@ -135,7 +135,7 @@ function mostrarComparacion(resultado) {
   // Mostrar Suizo
   if (!suizo.error) {
     document.getElementById('precioSuizo').textContent = '$' + formatearPrecio(suizo.producto.precioConDescuentoNumerico);
-    document.getElementById('detalleSuizo').textContent = 'Con descuento';
+    document.getElementById('detalleSuizo').textContent = `Cant. mín: ${suizo.producto.minimo} un.`
     btnAgregarSuizo.style.display = 'block';
   } else {
     document.getElementById('precioSuizo').textContent = 'No disponible';
@@ -149,6 +149,7 @@ function mostrarComparacion(resultado) {
     document.getElementById('detalleAcofar').textContent = `Cant. mín: ${acofar.producto.cantidadMinima} un.`;
     btnAgregarAcofar.style.display = 'block';
   } else {
+    console.log("acofar error", acofar.error);
     document.getElementById('precioAcofar').textContent = 'No disponible';
     document.getElementById('detalleAcofar').textContent = '';
     btnAgregarAcofar.style.display = 'none';
@@ -157,9 +158,7 @@ function mostrarComparacion(resultado) {
   // Mostrar Del Sur
   if (!sur.error) {
     document.getElementById('precioSur').textContent = '$' + formatearPrecio(sur.producto.precioConDescuento);
-    document.getElementById('detalleSur').textContent = sur.producto.porcentajeDescuento > 0 
-      ? `${sur.producto.porcentajeDescuento}% dto` 
-      : 'Precio normal';
+    document.getElementById('detalleSur').textContent =  `Cant. mín: ${sur.producto.cantidadMinima} un.`;
     btnAgregarSur.style.display = 'block';
   } else {
     document.getElementById('precioSur').textContent = 'No disponible';
@@ -382,7 +381,7 @@ function abrirModalCarrito(drogueria) {
   drogueriaActual = drogueria;
   
   let producto, nombreDrogueria;
-  
+  console.log("productoActual", productoActual);
   if (drogueria === 'suizo' && productoActual && !productoActual.suizo.error) {
     producto = productoActual.suizo.producto;
     nombreDrogueria = 'Suizo Argentina';
@@ -433,7 +432,8 @@ async function confirmarAgregarCarrito() {
     let resultado;
     
     if (drogueriaActual === 'suizo') {
-      const productoId = productoActual.suizo.producto.troquel;
+      const productoId = productoActual.suizo.producto.productoId;
+      
       if (!productoId) {
         throw new Error('No se encontró el ID del producto');
       }
@@ -444,8 +444,17 @@ async function confirmarAgregarCarrito() {
         cantidad: cantidad
       });
     } else if (drogueriaActual === 'acofar') {
-      // TODO: Implementar agregar a Acofar
-      throw new Error('Agregar a Acofar aún no está implementado');
+      const producto = productoActual.acofar.producto;
+      console.log('Producto para agregar al carrito Acofar:', productoActual);
+      if (!producto.codigoAlternativo) {
+        throw new Error('No se encontró el código alternativo del producto');
+      }
+      
+      resultado = await chrome.runtime.sendMessage({
+        action: 'agregarAlCarritoAcofar',
+        productoData: producto,
+        cantidad: cantidad
+      });
     } else if (drogueriaActual === 'sur') {
       // TODO: Implementar agregar a Del Sur
       throw new Error('Agregar a Droguería del Sur aún no está implementado');

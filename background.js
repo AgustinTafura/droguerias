@@ -13,7 +13,43 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .catch(error => sendResponse({ error: true, mensaje: error.message }));
     return true;
   }
+  
+  if (request.action === 'agregarAlCarritoAcofar') {
+    agregarAlCarritoAcofar(request.productoData, request.cantidad)
+      .then(resultado => sendResponse(resultado))
+      .catch(error => sendResponse({ error: true, mensaje: error.message }));
+    return true;
+  }
 });
+
+async function agregarAlCarritoAcofar(productoData, cantidad) {
+  try {
+    console.log('🛒 Agregando al carrito Acofar:', productoData, cantidad);
+    
+    // Buscar pestaña de Acofar
+    const tabs = await chrome.tabs.query({ url: "https://www.acofarnet.com/*" });
+    
+    if (tabs.length > 0) {
+      // Enviar mensaje al content script existente
+      try {
+        return await chrome.tabs.sendMessage(tabs[0].id, {
+          action: 'agregarAlCarritoAcofar',
+          productoData: productoData,
+          cantidad: cantidad
+        });
+      } catch (error) {
+        // Si falla, crear pestaña temporal
+        return await crearPestanaYAgregarCarrito('acofar', productoData, cantidad);
+      }
+    } else {
+      // Crear pestaña temporal
+      return await crearPestanaYAgregarCarrito('acofar', productoData, cantidad);
+    }
+  } catch (error) {
+    console.error('Error agregando al carrito Acofar:', error);
+    return { error: true, mensaje: 'Error: ' + error.message };
+  }
+}
 
 async function agregarAlCarritoSuizo(productoId, cantidad) {
   try {
@@ -46,9 +82,17 @@ async function agregarAlCarritoSuizo(productoId, cantidad) {
   }
 }
 
-async function crearPestanaYAgregarCarrito(drogueria, productoId, cantidad) {
+async function crearPestanaYAgregarCarrito(drogueria, productoData, cantidad) {
   return new Promise((resolve) => {
-    const url = 'https://web1.suizoargentina.com/stock';
+    let url, action;
+    
+    if (drogueria === 'suizo') {
+      url = 'https://web1.suizoargentina.com/stock';
+      action = 'agregarAlCarritoSuizo';
+    } else if (drogueria === 'acofar') {
+      url = 'https://www.acofarnet.com/iniciar-pedido/';
+      action = 'agregarAlCarritoAcofar';
+    }
     
     chrome.tabs.create({ url, active: false }, async (tab) => {
       console.log(`Pestaña ${drogueria} creada para agregar al carrito:`, tab.id);
@@ -57,11 +101,14 @@ async function crearPestanaYAgregarCarrito(drogueria, productoId, cantidad) {
         if (tabId === tab.id && info.status === 'complete') {
           chrome.tabs.onUpdated.removeListener(listener);
           
+          const delay = drogueria === 'acofar' ? 2500 : 1500;
+          
           setTimeout(async () => {
             try {
               const resultado = await chrome.tabs.sendMessage(tab.id, {
-                action: 'agregarAlCarritoSuizo',
-                productoId: productoId,
+                action: action,
+                productoId: drogueria === 'suizo' ? productoData : undefined,
+                productoData: drogueria === 'acofar' ? productoData : undefined,
                 cantidad: cantidad
               });
               
@@ -74,7 +121,7 @@ async function crearPestanaYAgregarCarrito(drogueria, productoId, cantidad) {
                 mensaje: `No se pudo conectar con ${drogueria}. Por favor, inicia sesión.`
               });
             }
-          }, 1500);
+          }, delay);
         }
       });
     });
@@ -143,6 +190,7 @@ async function consultarAcofar(codigoBarras) {
           codigoBarras: codigoBarras
         });
       } catch (error) {
+        console.log("error acofar", error);
         return await crearPestanaYConsultar('acofar', codigoBarras);
       }
     } else {

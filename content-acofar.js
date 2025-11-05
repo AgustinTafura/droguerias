@@ -23,7 +23,91 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .catch(error => sendResponse({ error: true, mensaje: error.message }));
     return true;
   }
+  
+  if (request.action === 'agregarAlCarritoAcofar') {
+    agregarAlCarritoAcofar(request.productoData, request.cantidad)
+      .then(resultado => {
+        console.log('✅ Producto agregado al carrito Acofar:', resultado);
+        sendResponse(resultado);
+      })
+      .catch(error => {
+        console.error('❌ Error agregando al carrito Acofar:', error);
+        sendResponse({ error: true, mensaje: error.message });
+      });
+    return true;
+  }
 });
+
+async function agregarAlCarritoAcofar(productoData, cantidad) {
+  try {
+    console.log(`🛒 Agregando al carrito Acofar:`, productoData, cantidad);
+    
+    // Calcular importes
+    const precioUnitario = productoData.costoUnidadCM;
+    const importe = precioUnitario * cantidad;
+    const importeSinDescuento = productoData.costoUnidadSM * cantidad;
+    
+    // Construir el body del formulario
+    const formData = new URLSearchParams({
+      'prods[0][cantidad]': cantidad.toString(),
+      'prods[0][filial]': '1',
+      'prods[0][descuento]': productoData.descProdRent.toFixed(2),
+      'prods[0][codigo]': productoData.codigoAlternativo,
+      'prods[0][stock]': productoData.hayStock ? 'S' : 'N',
+      'prods[0][stockOtraSucursal]': '0',
+      'prods[0][descripcion]': productoData.nombre,
+      'prods[0][importe]': importe.toFixed(2),
+      'prods[0][importeSinDescuento]': importeSinDescuento.toFixed(2),
+      'prods[0][dosporuno]': '0',
+      'prods[0][preciolista]': productoData.precioLista.toFixed(2),
+      'prods[0][descuentoConvenioPorcentaje]': '0.00',
+      'prods[0][DescCondicion]': productoData.descCondicion.toFixed(2),
+      'prods[0][DescProdRent]': productoData.descProdRent.toFixed(2),
+      'prods[0][pvp]': productoData.pvp.toFixed(2),
+      'pendientePerfumeria': 'false'
+    });
+
+    console.log('📤 Body para agregar al carrito Acofar:', formData.toString());
+
+    // Hacer la petición POST
+    const response = await fetch('https://www.acofarnet.com/wp-content/themes/acofar2016/app/ajax/tablaCarrito.php', {
+      method: 'POST',
+      headers: {
+        'Accept': '*/*',
+        'Accept-Language': 'es-ES,es;q=0.9',
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'X-Requested-With': 'XMLHttpRequest',
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'same-origin'
+      },
+      body: formData.toString(),
+      credentials: 'include',
+      mode: 'cors'
+    });
+
+    console.log('📥 Response status Acofar carrito:', response.status);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('📄 JSON recibido de Acofar carrito:', data);
+
+    return {
+      error: false,
+      mensaje: `${cantidad} unidad(es) agregada(s) al carrito de Acofar exitosamente`
+    };
+    
+  } catch (error) {
+    console.error('❌ Error agregando al carrito Acofar:', error);
+    return {
+      error: true,
+      mensaje: 'Error: ' + error.message
+    };
+  }
+}
 
 async function obtenerCsrfToken() {
   try {
@@ -123,6 +207,7 @@ async function consultarProductoAcofar(codigoBarras, csrfToken = '') {
     const resultado = {
       nombre: producto.Descripcion,
       codigoBarras: producto.BarrasInput || producto.Barras,
+      codigoAlternativo: producto.CodigoAlternativo || '', // IMPORTANTE para agregar al carrito
       troquel: producto.Troquel || '',
       stock: producto.HayStk === 'S' ? 'Sí' : 'No',
       hayStock: producto.HayStk === 'S',
@@ -140,7 +225,7 @@ async function consultarProductoAcofar(codigoBarras, csrfToken = '') {
       
       // Descuentos
       descCondicion: parseFloat(producto.DescCondicion) || 0,
-      descProductoRent: parseFloat(producto.DescProdRent) || 0,
+      descProdRent: parseFloat(producto.DescProdRent) || 0,
       porcentajeDescuentoEx: parseFloat(producto.PorcentajeDescuentoEx) || 0,
       
       // Otros
