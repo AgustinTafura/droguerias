@@ -1,4 +1,6 @@
 let historial = [];
+let productoActual = null; // Guardar el producto actual para agregar al carrito
+let drogueriaActual = null; // Guardar la droguería actual
 
 // Cargar historial al iniciar
 chrome.storage.local.get(['historial'], (result) => {
@@ -16,11 +18,35 @@ const resultadoSuizoDiv = document.getElementById('resultadoSuizo');
 const resultadoAcofarDiv = document.getElementById('resultadoAcofar');
 const resultadoSurDiv = document.getElementById('resultadoSur');
 
+// Referencias al modal
+const modalCantidad = document.getElementById('modalCantidad');
+const modalTitle = document.getElementById('modalTitle');
+const modalProducto = document.getElementById('modalProducto');
+const inputCantidad = document.getElementById('inputCantidad');
+const btnConfirmarAgregar = document.getElementById('btnConfirmarAgregar');
+const btnCancelarAgregar = document.getElementById('btnCancelarAgregar');
+const modalLoading = document.getElementById('modalLoading');
+const modalMensaje = document.getElementById('modalMensaje');
+
+// Referencias a botones de agregar carrito
+const btnAgregarSuizo = document.getElementById('btnAgregarSuizo');
+const btnAgregarAcofar = document.getElementById('btnAgregarAcofar');
+const btnAgregarSur = document.getElementById('btnAgregarSur');
+
 // Event listeners
 btnBuscar.addEventListener('click', buscarProducto);
 inputCodigo.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') buscarProducto();
 });
+
+// Event listeners para botones de agregar al carrito
+btnAgregarSuizo.addEventListener('click', () => abrirModalCarrito('suizo'));
+btnAgregarAcofar.addEventListener('click', () => abrirModalCarrito('acofar'));
+btnAgregarSur.addEventListener('click', () => abrirModalCarrito('sur'));
+
+// Event listeners del modal
+btnConfirmarAgregar.addEventListener('click', confirmarAgregarCarrito);
+btnCancelarAgregar.addEventListener('click', cerrarModalCarrito);
 
 async function buscarProducto() {
   const codigoBarras = inputCodigo.value.trim();
@@ -36,6 +62,9 @@ async function buscarProducto() {
   resultadoSuizoDiv.classList.add('hidden');
   resultadoAcofarDiv.classList.add('hidden');
   resultadoSurDiv.classList.add('hidden');
+  btnAgregarSuizo.style.display = 'none';
+  btnAgregarAcofar.style.display = 'none';
+  btnAgregarSur.style.display = 'none';
   loadingDiv.classList.remove('hidden');
 
   try {
@@ -50,6 +79,9 @@ async function buscarProducto() {
     if (resultado.error) {
       mostrarError(resultado.mensaje);
     } else {
+      // Guardar resultado globalmente
+      productoActual = resultado;
+      
       // Mostrar comparación
       if (resultado.comparacion.hayComparacion) {
         mostrarComparacion(resultado);
@@ -104,18 +136,22 @@ function mostrarComparacion(resultado) {
   if (!suizo.error) {
     document.getElementById('precioSuizo').textContent = '$' + formatearPrecio(suizo.producto.precioConDescuentoNumerico);
     document.getElementById('detalleSuizo').textContent = 'Con descuento';
+    btnAgregarSuizo.style.display = 'block';
   } else {
     document.getElementById('precioSuizo').textContent = 'No disponible';
     document.getElementById('detalleSuizo').textContent = '';
+    btnAgregarSuizo.style.display = 'none';
   }
   
   // Mostrar Acofar
   if (!acofar.error) {
     document.getElementById('precioAcofar').textContent = '$' + formatearPrecio(acofar.producto.costoUnidadCM);
     document.getElementById('detalleAcofar').textContent = `Cant. mín: ${acofar.producto.cantidadMinima} un.`;
+    btnAgregarAcofar.style.display = 'block';
   } else {
     document.getElementById('precioAcofar').textContent = 'No disponible';
     document.getElementById('detalleAcofar').textContent = '';
+    btnAgregarAcofar.style.display = 'none';
   }
   
   // Mostrar Del Sur
@@ -124,9 +160,11 @@ function mostrarComparacion(resultado) {
     document.getElementById('detalleSur').textContent = sur.producto.porcentajeDescuento > 0 
       ? `${sur.producto.porcentajeDescuento}% dto` 
       : 'Precio normal';
+    btnAgregarSur.style.display = 'block';
   } else {
     document.getElementById('precioSur').textContent = 'No disponible';
     document.getElementById('detalleSur').textContent = '';
+    btnAgregarSur.style.display = 'none';
   }
   
   // Marcar la más conveniente
@@ -337,3 +375,113 @@ function mostrarHistorial() {
     });
   });
 }
+
+// FUNCIONES DEL MODAL DE CARRITO
+
+function abrirModalCarrito(drogueria) {
+  drogueriaActual = drogueria;
+  
+  let producto, nombreDrogueria;
+  
+  if (drogueria === 'suizo' && productoActual && !productoActual.suizo.error) {
+    producto = productoActual.suizo.producto;
+    nombreDrogueria = 'Suizo Argentina';
+  } else if (drogueria === 'acofar' && productoActual && !productoActual.acofar.error) {
+    producto = productoActual.acofar.producto;
+    nombreDrogueria = 'Acofar';
+  } else if (drogueria === 'sur' && productoActual && !productoActual.sur.error) {
+    producto = productoActual.sur.producto;
+    nombreDrogueria = 'Droguería del Sur';
+  } else {
+    mostrarError('No se encontró información del producto para esta droguería');
+    return;
+  }
+  
+  modalTitle.textContent = `Agregar a ${nombreDrogueria}`;
+  modalProducto.textContent = producto.nombre;
+  inputCantidad.value = 1;
+  modalLoading.classList.add('hidden');
+  modalMensaje.classList.add('hidden');
+  
+  // Mostrar el modal
+  modalCantidad.classList.remove('hidden');
+  inputCantidad.focus();
+}
+
+function cerrarModalCarrito() {
+  modalCantidad.classList.add('hidden');
+  drogueriaActual = null;
+}
+
+async function confirmarAgregarCarrito() {
+  const cantidad = parseInt(inputCantidad.value);
+  
+  if (!cantidad || cantidad < 1) {
+    modalMensaje.textContent = 'Por favor, ingrese una cantidad válida';
+    modalMensaje.className = 'error';
+    modalMensaje.classList.remove('hidden');
+    return;
+  }
+  
+  // Ocultar botones y mostrar loading
+  btnConfirmarAgregar.disabled = true;
+  btnCancelarAgregar.disabled = true;
+  modalLoading.classList.remove('hidden');
+  modalMensaje.classList.add('hidden');
+  
+  try {
+    let resultado;
+    
+    if (drogueriaActual === 'suizo') {
+      const productoId = productoActual.suizo.producto.troquel;
+      if (!productoId) {
+        throw new Error('No se encontró el ID del producto');
+      }
+      
+      resultado = await chrome.runtime.sendMessage({
+        action: 'agregarAlCarritoSuizo',
+        productoId: productoId,
+        cantidad: cantidad
+      });
+    } else if (drogueriaActual === 'acofar') {
+      // TODO: Implementar agregar a Acofar
+      throw new Error('Agregar a Acofar aún no está implementado');
+    } else if (drogueriaActual === 'sur') {
+      // TODO: Implementar agregar a Del Sur
+      throw new Error('Agregar a Droguería del Sur aún no está implementado');
+    }
+    
+    modalLoading.classList.add('hidden');
+    
+    if (resultado.error) {
+      modalMensaje.textContent = resultado.mensaje;
+      modalMensaje.className = 'error';
+    } else {
+      modalMensaje.textContent = resultado.mensaje;
+      modalMensaje.className = 'success';
+      
+      // Cerrar modal después de 2 segundos
+      setTimeout(() => {
+        cerrarModalCarrito();
+      }, 2000);
+    }
+    
+    modalMensaje.classList.remove('hidden');
+    
+  } catch (error) {
+    modalLoading.classList.add('hidden');
+    modalMensaje.textContent = 'Error: ' + error.message;
+    modalMensaje.className = 'error';
+    modalMensaje.classList.remove('hidden');
+  } finally {
+    btnConfirmarAgregar.disabled = false;
+    btnCancelarAgregar.disabled = false;
+  }
+}
+
+// Permitir Enter en el input de cantidad
+inputCantidad.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    confirmarAgregarCarrito();
+  }
+});

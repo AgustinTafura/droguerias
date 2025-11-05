@@ -16,7 +16,74 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
     return true; // Mantener el canal abierto
   }
+  
+  if (request.action === 'agregarAlCarritoSuizo') {
+    agregarAlCarritoSuizo(request.productoId, request.cantidad)
+      .then(resultado => {
+        console.log('✅ Producto agregado al carrito:', resultado);
+        sendResponse(resultado);
+      })
+      .catch(error => {
+        console.error('❌ Error agregando al carrito:', error);
+        sendResponse({ error: true, mensaje: error.message });
+      });
+    return true;
+  }
 });
+
+async function agregarAlCarritoSuizo(productoId, cantidad) {
+  try {
+    console.log(`🛒 Agregando al carrito: ID=${productoId}, Cantidad=${cantidad}`);
+    
+    // Construir el body del formulario
+    const formData = new URLSearchParams({
+      'tipo_busqueda': 'codigo',
+      'carroid': '1',
+      [`cant[${productoId}]`]: cantidad.toString(),
+      'contieneDrog': '',
+      'tip': '1'
+    });
+
+    console.log('📤 Body para agregar al carrito:', formData.toString());
+
+    // Hacer la petición POST
+    const response = await fetch('https://web1.suizoargentina.com/carro/agregar', {
+      method: 'POST',
+      headers: {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept-Language': 'es-ES,es;q=0.9',
+        'Cache-Control': 'max-age=0',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'same-origin',
+        'Sec-Fetch-User': '?1',
+        'Upgrade-Insecure-Requests': '1'
+      },
+      body: formData.toString(),
+      credentials: 'include',
+      mode: 'cors'
+    });
+
+    console.log('📥 Response status:', response.status);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return {
+      error: false,
+      mensaje: `${cantidad} unidad(es) agregada(s) al carrito exitosamente`
+    };
+    
+  } catch (error) {
+    console.error('❌ Error agregando al carrito:', error);
+    return {
+      error: true,
+      mensaje: 'Error: ' + error.message
+    };
+  }
+}
 
 async function consultarProducto(codigoBarras) {
   try {
@@ -46,7 +113,7 @@ async function consultarProducto(codigoBarras) {
         'Sec-Fetch-User': '?1',
         'Upgrade-Insecure-Requests': '1'
       },
-      body: formData.toString(), // ¡IMPORTANTE: Agregar el body!
+      body: formData.toString(),
       credentials: 'include',
       mode: 'cors'
     });
@@ -116,6 +183,12 @@ function parsearHTML(html, codigoBarras) {
 
     const tr = trMatch[1];
     
+    // IMPORTANTE: Extraer el ID del producto (data-id del input)
+    const productoIdMatch = tr.match(/data-id="(\d+)"/);
+    const productoId = productoIdMatch ? productoIdMatch[1] : null;
+    
+    console.log('🆔 ID del producto extraído:', productoId);
+    
     // Extraer todas las celdas <td>
     const celdas = [];
     const tdRegex = /<td[^>]*>([\s\S]*?)<\/td>/g;
@@ -132,6 +205,9 @@ function parsearHTML(html, codigoBarras) {
     }
 
     const resultado = {};
+    
+    // Agregar el ID del producto al resultado
+    resultado.productoId = productoId;
 
     // Celda 2: Nombre y datos del tooltip (td class="t1")
     const celdaNombre = celdas[2];

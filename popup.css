@@ -99,6 +99,16 @@ body {
   margin: 0 auto 15px;
 }
 
+.spinner-small {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #667eea;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 10px;
+}
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
@@ -192,6 +202,26 @@ body {
 .drogueria-detalle {
   font-size: 11px;
   opacity: 0.85;
+  margin-bottom: 8px;
+}
+
+.btn-agregar-carrito {
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+  border: 2px solid white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-top: 8px;
+}
+
+.btn-agregar-carrito:hover {
+  background: white;
+  color: #333;
+  transform: scale(1.05);
 }
 
 .resultado-comparacion {
@@ -368,4 +398,129 @@ body {
 .historial-item .codigo {
   color: #666;
   font-size: 12px;
+}
+
+/* MODAL */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s;
+}
+
+.modal-content {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content h3 {
+  margin-bottom: 15px;
+  color: #333;
+  font-size: 20px;
+}
+
+.modal-content p {
+  margin-bottom: 20px;
+  color: #666;
+  font-size: 14px;
+}
+
+.input-cantidad {
+  margin-bottom: 20px;
+}
+
+.input-cantidad label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #555;
+}
+
+.input-cantidad input {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+.input-cantidad input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-primary, .btn-secondary {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+  background: #e0e0e0;
+  color: #666;
+}
+
+.btn-secondary:hover {
+  background: #d0d0d0;
+}
+
+#modalLoading {
+  text-align: center;
+  padding: 20px;
+}
+
+#modalLoading p {
+  margin: 0;
+  color: #666;
+}
+
+#modalMensaje {
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 15px;
+  text-align: center;
+  font-weight: 600;
+}
+
+#modalMensaje.success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+#modalMensaje.error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
 }

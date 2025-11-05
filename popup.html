@@ -41,16 +41,25 @@
           <div class="drogueria-nombre">Suizo Argentina</div>
           <div class="drogueria-precio" id="precioSuizo">$0.00</div>
           <div class="drogueria-detalle" id="detalleSuizo"></div>
+          <button class="btn-agregar-carrito" id="btnAgregarSuizo" style="display: none;">
+            🛒 Agregar al carrito
+          </button>
         </div>
         <div class="drogueria-card acofar-card" id="cardAcofar">
           <div class="drogueria-nombre">Acofar</div>
           <div class="drogueria-precio" id="precioAcofar">$0.00</div>
           <div class="drogueria-detalle" id="detalleAcofar"></div>
+          <button class="btn-agregar-carrito" id="btnAgregarAcofar" style="display: none;">
+            🛒 Agregar al carrito
+          </button>
         </div>
         <div class="drogueria-card sur-card" id="cardSur">
           <div class="drogueria-nombre">Droguería del Sur</div>
           <div class="drogueria-precio" id="precioSur">$0.00</div>
           <div class="drogueria-detalle" id="detalleSur"></div>
+          <button class="btn-agregar-carrito" id="btnAgregarSur" style="display: none;">
+            🛒 Agregar al carrito
+          </button>
         </div>
       </div>
       <div class="resultado-comparacion" id="resultadoComparacion"></div>
@@ -160,6 +169,27 @@
     <div class="historial" id="historial">
       <h3>Últimas Consultas</h3>
       <div id="listaHistorial"></div>
+    </div>
+  </div>
+
+  <!-- Modal para cantidad -->
+  <div id="modalCantidad" class="modal hidden">
+    <div class="modal-content">
+      <h3 id="modalTitle">Agregar al Carrito</h3>
+      <p id="modalProducto"></p>
+      <div class="input-cantidad">
+        <label for="inputCantidad">Cantidad:</label>
+        <input type="number" id="inputCantidad" min="1" value="1" />
+      </div>
+      <div class="modal-buttons">
+        <button id="btnConfirmarAgregar" class="btn-primary">Agregar</button>
+        <button id="btnCancelarAgregar" class="btn-secondary">Cancelar</button>
+      </div>
+      <div id="modalLoading" class="hidden">
+        <div class="spinner-small"></div>
+        <p>Agregando al carrito...</p>
+      </div>
+      <div id="modalMensaje" class="hidden"></div>
     </div>
   </div>
 

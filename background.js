@@ -6,7 +6,80 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .catch(error => sendResponse({ error: true, mensaje: error.message }));
     return true;
   }
+  
+  if (request.action === 'agregarAlCarritoSuizo') {
+    agregarAlCarritoSuizo(request.productoId, request.cantidad)
+      .then(resultado => sendResponse(resultado))
+      .catch(error => sendResponse({ error: true, mensaje: error.message }));
+    return true;
+  }
 });
+
+async function agregarAlCarritoSuizo(productoId, cantidad) {
+  try {
+    console.log('🛒 Agregando al carrito Suizo:', productoId, cantidad);
+    
+    // Buscar pestaña de Suizo
+    const tabs = await chrome.tabs.query({ 
+      url: ["https://web1.suizoargentina.com/*", "https://*.suizoargentina.com/*"] 
+    });
+    
+    if (tabs.length > 0) {
+      // Enviar mensaje al content script existente
+      try {
+        return await chrome.tabs.sendMessage(tabs[0].id, {
+          action: 'agregarAlCarritoSuizo',
+          productoId: productoId,
+          cantidad: cantidad
+        });
+      } catch (error) {
+        // Si falla, crear pestaña temporal
+        return await crearPestanaYAgregarCarrito('suizo', productoId, cantidad);
+      }
+    } else {
+      // Crear pestaña temporal
+      return await crearPestanaYAgregarCarrito('suizo', productoId, cantidad);
+    }
+  } catch (error) {
+    console.error('Error agregando al carrito:', error);
+    return { error: true, mensaje: 'Error: ' + error.message };
+  }
+}
+
+async function crearPestanaYAgregarCarrito(drogueria, productoId, cantidad) {
+  return new Promise((resolve) => {
+    const url = 'https://web1.suizoargentina.com/stock';
+    
+    chrome.tabs.create({ url, active: false }, async (tab) => {
+      console.log(`Pestaña ${drogueria} creada para agregar al carrito:`, tab.id);
+      
+      chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
+        if (tabId === tab.id && info.status === 'complete') {
+          chrome.tabs.onUpdated.removeListener(listener);
+          
+          setTimeout(async () => {
+            try {
+              const resultado = await chrome.tabs.sendMessage(tab.id, {
+                action: 'agregarAlCarritoSuizo',
+                productoId: productoId,
+                cantidad: cantidad
+              });
+              
+              setTimeout(() => chrome.tabs.remove(tab.id), 1000);
+              resolve(resultado);
+            } catch (error) {
+              chrome.tabs.remove(tab.id);
+              resolve({
+                error: true,
+                mensaje: `No se pudo conectar con ${drogueria}. Por favor, inicia sesión.`
+              });
+            }
+          }, 1500);
+        }
+      });
+    });
+  });
+}
 
 async function consultarEnTresDroguerias(codigoBarras) {
   try {
