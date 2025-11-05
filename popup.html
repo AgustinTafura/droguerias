@@ -10,7 +10,7 @@
   <div class="container">
     <div class="header">
       <h1>🔍 Consulta Stock</h1>
-      <p class="subtitle">Suizo Argentina</p>
+      <p class="subtitle">Comparador de Droguerías</p>
     </div>
 
     <div class="form-group">
@@ -26,73 +26,100 @@
 
     <div id="loading" class="loading hidden">
       <div class="spinner"></div>
-      <p>Consultando...</p>
+      <p>Consultando ambas droguerías...</p>
     </div>
 
     <div id="error" class="error hidden"></div>
 
-    <div id="resultado" class="resultado hidden">
-      <div class="producto-header">
-        <h2 id="nombreProducto"></h2>
-        <span id="stockBadge" class="badge"></span>
+    <!-- COMPARACIÓN -->
+    <div id="comparacion" class="comparacion hidden">
+      <div class="comparacion-header">
+        <h3>💰 Comparación de Precios</h3>
       </div>
-
-      <div class="info-grid">
-        <div class="info-item">
-          <span class="label">Código de Barras:</span>
-          <span id="codigoBarrasResultado" class="value"></span>
+      <div class="comparacion-cards">
+        <div class="drogueria-card suizo-card" id="cardSuizo">
+          <div class="drogueria-nombre">Suizo Argentina</div>
+          <div class="drogueria-precio" id="precioSuizo">$0.00</div>
+          <div class="drogueria-detalle" id="detalleSuizo"></div>
         </div>
-        
-        <div class="info-item" id="troquelItem">
+        <div class="drogueria-card acofar-card" id="cardAcofar">
+          <div class="drogueria-nombre">Acofar</div>
+          <div class="drogueria-precio" id="precioAcofar">$0.00</div>
+          <div class="drogueria-detalle" id="detalleAcofar"></div>
+        </div>
+      </div>
+      <div class="resultado-comparacion" id="resultadoComparacion"></div>
+    </div>
+
+    <!-- RESULTADO SUIZO -->
+    <div id="resultadoSuizo" class="resultado hidden">
+      <div class="resultado-header">
+        <h3>🏥 Suizo Argentina</h3>
+        <span id="stockBadgeSuizo" class="badge"></span>
+      </div>
+      <h4 id="nombreProductoSuizo" class="producto-nombre"></h4>
+      
+      <div class="info-grid-small">
+        <div class="info-row">
+          <span class="label">Código:</span>
+          <span id="codigoSuizo"></span>
+        </div>
+        <div class="info-row" id="troquelRowSuizo">
           <span class="label">Troquel:</span>
-          <span id="troquel" class="value"></span>
+          <span id="troquelSuizo"></span>
         </div>
-
-        <div class="info-item">
-          <span class="label">Stock:</span>
-          <span id="stock" class="value"></span>
-        </div>
-
-        <div class="info-item" id="descuentoItem">
+        <div class="info-row" id="descuentoRowSuizo">
           <span class="label">Descuento:</span>
-          <span id="descuento" class="value destacado"></span>
-        </div>
-
-        <div class="info-item" id="minimoItem">
-          <span class="label">Mínimo:</span>
-          <span id="minimo" class="value"></span>
+          <span id="descuentoSuizo" class="destacado"></span>
         </div>
       </div>
 
-      <div class="precios">
-        <div class="precio-card">
-          <span class="precio-label">Su Precio</span>
-          <span id="precio" class="precio-valor">$0.00</span>
-        </div>
+      <div class="precios-mini">
+        <div><strong>Su Precio:</strong> <span id="precioBaseSuizo"></span></div>
+        <div><strong>Con Descuento:</strong> <span id="precioDescSuizo" class="precio-destacado"></span></div>
+        <div><strong>Público Sugerido:</strong> <span id="precioPubSuizo"></span></div>
+      </div>
 
-        <div class="precio-card destacado">
-          <span class="precio-label">Con Descuento</span>
-          <span id="precioConDescuento" class="precio-valor">$0.00</span>
-        </div>
+      <div class="oferta-detalle" id="ofertaDetalleSuizo"></div>
+    </div>
 
-        <div class="precio-card">
-          <span class="precio-label">Público Sugerido</span>
-          <span id="precioPublico" class="precio-valor">$0.00</span>
+    <!-- RESULTADO ACOFAR -->
+    <div id="resultadoAcofar" class="resultado hidden">
+      <div class="resultado-header">
+        <h3>🏥 Acofar</h3>
+        <span id="stockBadgeAcofar" class="badge"></span>
+      </div>
+      <h4 id="nombreProductoAcofar" class="producto-nombre"></h4>
+      
+      <div class="info-grid-small">
+        <div class="info-row">
+          <span class="label">Código:</span>
+          <span id="codigoAcofar"></span>
+        </div>
+        <div class="info-row">
+          <span class="label">Proveedor:</span>
+          <span id="proveedorAcofar"></span>
+        </div>
+        <div class="info-row">
+          <span class="label">Cantidad Mínima:</span>
+          <span id="cantidadMinimaAcofar" class="destacado"></span>
+        </div>
+        <div class="info-row">
+          <span class="label">Desc. Condición:</span>
+          <span id="descCondicionAcofar" class="destacado"></span>
         </div>
       </div>
 
-      <div class="oferta-detalle" id="ofertaDetalle"></div>
+      <div class="precios-mini">
+        <div><strong>Sin Cant. Mínima:</strong> <span id="precioSMAcofar"></span></div>
+        <div><strong>Con Cant. Mínima:</strong> <span id="precioCMAcofar" class="precio-destacado"></span></div>
+        <div><strong>PVP:</strong> <span id="pvpAcofar"></span></div>
+      </div>
     </div>
 
     <div class="historial" id="historial">
       <h3>Últimas Consultas</h3>
       <div id="listaHistorial"></div>
-    </div>
-
-    <div class="footer">
-      <a href="https://web1.suizoargentina.com/stock" target="_blank" id="linkSitio">
-        Abrir sitio web
-      </a>
     </div>
   </div>
 

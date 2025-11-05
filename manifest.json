@@ -3,10 +3,15 @@
   "name": "Consulta Stock Suizo Argentina",
   "version": "1.0",
   "description": "Consulta rápida de productos por código de barras",
-  "permissions": ["storage", "tabs", "activeTab", "scripting"],
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
   "host_permissions": [
     "https://web1.suizoargentina.com/*",
-    "https://*.suizoargentina.com/*"
+    "https://*.suizoargentina.com/*",
+    "https://www.acofarnet.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -22,7 +27,12 @@
   "content_scripts": [
     {
       "matches": ["https://web1.suizoargentina.com/*", "https://*.suizoargentina.com/*"],
-      "js": ["content.js"],
+      "js": ["content-suizo.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.acofarnet.com/*"],
+      "js": ["content-acofar.js"],
       "run_at": "document_idle"
     }
   ],

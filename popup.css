@@ -5,7 +5,7 @@
 }
 
 body {
-  width: 420px;
+  width: 500px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #333;
@@ -14,7 +14,7 @@ body {
 .container {
   background: white;
   min-height: 400px;
-  max-height: 600px;
+  max-height: 700px;
   overflow-y: auto;
 }
 
@@ -117,8 +117,115 @@ body {
   display: none !important;
 }
 
+/* COMPARACIÓN */
+.comparacion {
+  padding: 20px;
+  background: #f8f9fa;
+  border-bottom: 2px solid #e0e0e0;
+  animation: fadeIn 0.3s;
+}
+
+.comparacion-header h3 {
+  text-align: center;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.comparacion-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.drogueria-card {
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  transition: transform 0.3s, box-shadow 0.3s;
+  border: 3px solid transparent;
+}
+
+.drogueria-card:hover {
+  transform: translateY(-4px);
+}
+
+.suizo-card {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+}
+
+.acofar-card {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  color: white;
+}
+
+.drogueria-card.mejor-precio {
+  border-color: #ffd700;
+  box-shadow: 0 8px 24px rgba(255, 215, 0, 0.4);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.drogueria-nombre {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  opacity: 0.9;
+}
+
+.drogueria-precio {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.drogueria-detalle {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.resultado-comparacion {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.resultado-icono {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+.resultado-texto {
+  font-size: 16px;
+  color: #333;
+  line-height: 1.6;
+}
+
+.ahorro {
+  color: #28a745;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.nota-cantidad, .nota-descuento {
+  margin-top: 10px;
+  padding: 8px;
+  background: #fff3cd;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #856404;
+}
+
+/* RESULTADOS */
 .resultado {
   padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
   animation: fadeIn 0.3s;
 }
 
@@ -127,19 +234,22 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.producto-header {
+.resultado-header {
   display: flex;
   justify-content: space-between;
-  align-items: start;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 2px solid #e0e0e0;
+  align-items: center;
+  margin-bottom: 10px;
 }
 
-.producto-header h2 {
+.resultado-header h3 {
   font-size: 18px;
+  color: #667eea;
+}
+
+.producto-nombre {
+  font-size: 16px;
   color: #333;
-  flex: 1;
+  margin-bottom: 15px;
   line-height: 1.4;
 }
 
@@ -149,7 +259,6 @@ body {
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
-  margin-left: 10px;
 }
 
 .badge.stock-si {
@@ -162,92 +271,62 @@ body {
   color: #721c24;
 }
 
-.info-grid {
+.info-grid-small {
   display: grid;
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: 8px;
+  margin-bottom: 15px;
 }
 
-.info-item {
+.info-row {
   display: flex;
   justify-content: space-between;
-  padding: 10px;
+  padding: 8px;
   background: #f8f9fa;
   border-radius: 6px;
+  font-size: 13px;
 }
 
-.info-item .label {
+.info-row .label {
   font-weight: 600;
   color: #666;
 }
 
-.info-item .value {
-  color: #333;
-  font-weight: 500;
-}
-
-.info-item .value.destacado {
+.info-row .destacado {
   color: #667eea;
   font-weight: 700;
 }
 
-.precios {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 15px;
-}
-
-.precio-card {
+.precios-mini {
   background: #f8f9fa;
-  padding: 15px;
+  padding: 12px;
   border-radius: 8px;
-  text-align: center;
-  transition: transform 0.2s;
+  margin-bottom: 10px;
 }
 
-.precio-card:hover {
-  transform: translateY(-2px);
+.precios-mini div {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 14px;
 }
 
-.precio-card.destacado {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.precio-label {
-  display: block;
-  font-size: 11px;
-  margin-bottom: 8px;
-  opacity: 0.8;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.precio-card.destacado .precio-label {
-  color: white;
-}
-
-.precio-valor {
-  display: block;
-  font-size: 16px;
+.precio-destacado {
+  color: #28a745;
   font-weight: 700;
-  color: #333;
-}
-
-.precio-card.destacado .precio-valor {
-  color: white;
+  font-size: 16px;
 }
 
 .oferta-detalle {
   background: #fff3cd;
   border-left: 4px solid #ffc107;
-  padding: 12px;
+  padding: 10px;
   border-radius: 6px;
   font-size: 13px;
   color: #856404;
+  margin-top: 10px;
 }
 
+/* HISTORIAL */
 .historial {
   padding: 20px;
   background: #f8f9fa;
@@ -284,22 +363,4 @@ body {
 .historial-item .codigo {
   color: #666;
   font-size: 12px;
-}
-
-.footer {
-  padding: 15px 20px;
-  text-align: center;
-  background: #f8f9fa;
-  border-top: 1px solid #e0e0e0;
-}
-
-.footer a {
-  color: #667eea;
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.footer a:hover {
-  text-decoration: underline;
 }

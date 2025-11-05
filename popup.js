@@ -11,7 +11,9 @@ const inputCodigo = document.getElementById('codigoBarras');
 const btnBuscar = document.getElementById('btnBuscar');
 const loadingDiv = document.getElementById('loading');
 const errorDiv = document.getElementById('error');
-const resultadoDiv = document.getElementById('resultado');
+const comparacionDiv = document.getElementById('comparacion');
+const resultadoSuizoDiv = document.getElementById('resultadoSuizo');
+const resultadoAcofarDiv = document.getElementById('resultadoAcofar');
 
 // Event listeners
 btnBuscar.addEventListener('click', buscarProducto);
@@ -29,7 +31,9 @@ async function buscarProducto() {
 
   // Ocultar elementos previos
   errorDiv.classList.add('hidden');
-  resultadoDiv.classList.add('hidden');
+  comparacionDiv.classList.add('hidden');
+  resultadoSuizoDiv.classList.add('hidden');
+  resultadoAcofarDiv.classList.add('hidden');
   loadingDiv.classList.remove('hidden');
 
   try {
@@ -44,8 +48,26 @@ async function buscarProducto() {
     if (resultado.error) {
       mostrarError(resultado.mensaje);
     } else {
-      mostrarResultado(resultado.producto);
-      agregarAlHistorial(resultado.producto);
+      // Mostrar comparación
+      if (resultado.comparacion.hayComparacion) {
+        mostrarComparacion(resultado.comparacion, resultado.suizo.producto, resultado.acofar.producto);
+      }
+      
+      // Mostrar detalles de Suizo
+      if (!resultado.suizo.error) {
+        mostrarResultadoSuizo(resultado.suizo.producto);
+      }
+      
+      // Mostrar detalles de Acofar
+      if (!resultado.acofar.error) {
+        mostrarResultadoAcofar(resultado.acofar.producto);
+      }
+      
+      // Agregar al historial
+      const productoParaHistorial = !resultado.suizo.error 
+        ? resultado.suizo.producto 
+        : resultado.acofar.producto;
+      agregarAlHistorial(productoParaHistorial);
     }
   } catch (error) {
     loadingDiv.classList.add('hidden');
@@ -58,61 +80,129 @@ function mostrarError(mensaje) {
   errorDiv.classList.remove('hidden');
 }
 
-function mostrarResultado(producto) {
+function mostrarComparacion(comparacion, productoSuizo, productoAcofar) {
+  comparacionDiv.classList.remove('hidden');
+  
+  // Precios
+  document.getElementById('precioSuizo').textContent = '$' + formatearPrecio(comparacion.precioSuizo);
+  document.getElementById('precioAcofar').textContent = '$' + formatearPrecio(comparacion.precioAcofarCM);
+  
+  // Detalles
+  document.getElementById('detalleSuizo').textContent = 'Con descuento';
+  document.getElementById('detalleAcofar').textContent = `Cant. mín: ${comparacion.cantidadMinima} un.`;
+  
+  // Marcar el más conveniente
+  const cardSuizo = document.getElementById('cardSuizo');
+  const cardAcofar = document.getElementById('cardAcofar');
+  
+  cardSuizo.classList.remove('mejor-precio');
+  cardAcofar.classList.remove('mejor-precio');
+  
+  if (comparacion.masConveniente === 'suizo') {
+    cardSuizo.classList.add('mejor-precio');
+  } else {
+    cardAcofar.classList.add('mejor-precio');
+  }
+  
+  // Resultado de comparación
+  const resultadoComparacion = document.getElementById('resultadoComparacion');
+  const nombreGanador = comparacion.masConveniente === 'suizo' ? 'Suizo Argentina' : 'Acofar';
+  const ahorro = formatearPrecio(comparacion.diferencia);
+  const porcentaje = comparacion.porcentajeDiferencia.toFixed(2);
+  
+  resultadoComparacion.innerHTML = `
+    <div class="resultado-icono">🏆</div>
+    <div class="resultado-texto">
+      <strong>${nombreGanador}</strong> es más conveniente<br>
+      <span class="ahorro">Ahorrás $${ahorro} (${porcentaje}%)</span>
+    </div>
+  `;
+  
+  if (comparacion.masConveniente === 'acofar' && comparacion.cantidadMinima > 1) {
+    resultadoComparacion.innerHTML += `
+      <div class="nota-cantidad">
+        ⚠️ Precio de Acofar válido comprando ${comparacion.cantidadMinima} o más unidades
+      </div>
+    `;
+  }
+  
+  if (comparacion.descCondicionAcofar > 0) {
+    resultadoComparacion.innerHTML += `
+      <div class="nota-descuento">
+        📊 Acofar incluye ${comparacion.descCondicionAcofar}% de descuento por condición
+      </div>
+    `;
+  }
+}
+
+function mostrarResultadoSuizo(producto) {
+  resultadoSuizoDiv.classList.remove('hidden');
+  
   // Nombre
-  document.getElementById('nombreProducto').textContent = producto.nombre;
+  document.getElementById('nombreProductoSuizo').textContent = producto.nombre;
   
   // Badge de stock
-  const stockBadge = document.getElementById('stockBadge');
+  const stockBadge = document.getElementById('stockBadgeSuizo');
   stockBadge.textContent = producto.hayStock ? 'En Stock' : 'Sin Stock';
   stockBadge.className = 'badge ' + (producto.hayStock ? 'stock-si' : 'stock-no');
   
   // Información
-  document.getElementById('codigoBarrasResultado').textContent = producto.codigoBarras;
-  document.getElementById('stock').textContent = producto.stock;
+  document.getElementById('codigoSuizo').textContent = producto.codigoBarras;
   
-  // Troquel (ocultar si no existe)
-  const troquelItem = document.getElementById('troquelItem');
+  // Troquel
+  const troquelRow = document.getElementById('troquelRowSuizo');
   if (producto.troquel) {
-    document.getElementById('troquel').textContent = producto.troquel;
-    troquelItem.style.display = 'flex';
+    document.getElementById('troquelSuizo').textContent = producto.troquel;
+    troquelRow.style.display = 'flex';
   } else {
-    troquelItem.style.display = 'none';
+    troquelRow.style.display = 'none';
   }
   
   // Descuento
-  const descuentoItem = document.getElementById('descuentoItem');
+  const descuentoRow = document.getElementById('descuentoRowSuizo');
   if (producto.porcentajeDescuento > 0) {
-    document.getElementById('descuento').textContent = producto.porcentajeDescuento + '%';
-    descuentoItem.style.display = 'flex';
+    document.getElementById('descuentoSuizo').textContent = producto.porcentajeDescuento + '%';
+    descuentoRow.style.display = 'flex';
   } else {
-    descuentoItem.style.display = 'none';
-  }
-  
-  // Mínimo
-  const minimoItem = document.getElementById('minimoItem');
-  if (producto.minimo) {
-    document.getElementById('minimo').textContent = producto.minimo + ' unidades';
-    minimoItem.style.display = 'flex';
-  } else {
-    minimoItem.style.display = 'none';
+    descuentoRow.style.display = 'none';
   }
   
   // Precios
-  document.getElementById('precio').textContent = '$' + formatearPrecio(producto.precioNumerico);
-  document.getElementById('precioConDescuento').textContent = '$' + formatearPrecio(producto.precioConDescuentoNumerico);
-  document.getElementById('precioPublico').textContent = '$' + formatearPrecio(producto.precioPublicoSugeridoNumerico);
+  document.getElementById('precioBaseSuizo').textContent = '$' + formatearPrecio(producto.precioNumerico);
+  document.getElementById('precioDescSuizo').textContent = '$' + formatearPrecio(producto.precioConDescuentoNumerico);
+  document.getElementById('precioPubSuizo').textContent = '$' + formatearPrecio(producto.precioPublicoSugeridoNumerico);
   
-  // Oferta detalle
-  const ofertaDetalle = document.getElementById('ofertaDetalle');
+  // Oferta
+  const ofertaDetalle = document.getElementById('ofertaDetalleSuizo');
   if (producto.oferta && producto.oferta !== '') {
     ofertaDetalle.textContent = '🎯 ' + producto.oferta;
     ofertaDetalle.style.display = 'block';
   } else {
     ofertaDetalle.style.display = 'none';
   }
+}
+
+function mostrarResultadoAcofar(producto) {
+  resultadoAcofarDiv.classList.remove('hidden');
   
-  resultadoDiv.classList.remove('hidden');
+  // Nombre
+  document.getElementById('nombreProductoAcofar').textContent = producto.nombre;
+  
+  // Badge de stock
+  const stockBadge = document.getElementById('stockBadgeAcofar');
+  stockBadge.textContent = producto.hayStock ? `En Stock (${producto.cantidad})` : 'Sin Stock';
+  stockBadge.className = 'badge ' + (producto.hayStock ? 'stock-si' : 'stock-no');
+  
+  // Información
+  document.getElementById('codigoAcofar').textContent = producto.codigoBarras;
+  document.getElementById('proveedorAcofar').textContent = producto.proveedor;
+  document.getElementById('cantidadMinimaAcofar').textContent = producto.cantidadMinima + ' unidades';
+  document.getElementById('descCondicionAcofar').textContent = producto.descCondicion + '%';
+  
+  // Precios
+  document.getElementById('precioSMAcofar').textContent = '$' + formatearPrecio(producto.costoUnidadSM);
+  document.getElementById('precioCMAcofar').textContent = '$' + formatearPrecio(producto.costoUnidadCM);
+  document.getElementById('pvpAcofar').textContent = '$' + formatearPrecio(producto.pvp);
 }
 
 function formatearPrecio(precio) {
