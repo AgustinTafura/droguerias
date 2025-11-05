@@ -1,28 +1,30 @@
 // Escuchar mensajes del popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'consultarProducto') {
-    consultarEnAmbasDroguerias(request.codigoBarras)
+    consultarEnTresDroguerias(request.codigoBarras)
       .then(resultado => sendResponse(resultado))
       .catch(error => sendResponse({ error: true, mensaje: error.message }));
     return true;
   }
 });
 
-async function consultarEnAmbasDroguerias(codigoBarras) {
+async function consultarEnTresDroguerias(codigoBarras) {
   try {
-    console.log('🔍 Consultando en ambas droguerías...');
+    console.log('🔍 Consultando en las tres droguerías...');
     
-    // Consultar Suizo y Acofar en paralelo
-    const [resultadoSuizo, resultadoAcofar] = await Promise.all([
+    // Consultar Suizo, Acofar y Del Sur en paralelo
+    const [resultadoSuizo, resultadoAcofar, resultadoSur] = await Promise.all([
       consultarSuizo(codigoBarras),
-      consultarAcofar(codigoBarras)
+      consultarAcofar(codigoBarras),
+      consultarSur(codigoBarras)
     ]);
 
     return {
       error: false,
       suizo: resultadoSuizo,
       acofar: resultadoAcofar,
-      comparacion: compararPrecios(resultadoSuizo, resultadoAcofar)
+      sur: resultadoSur,
+      comparacion: compararPrecios(resultadoSuizo, resultadoAcofar, resultadoSur)
     };
     
   } catch (error) {
@@ -78,15 +80,41 @@ async function consultarAcofar(codigoBarras) {
   }
 }
 
+async function consultarSur(codigoBarras) {
+  try {
+    const tabs = await chrome.tabs.query({ url: "https://www.drogueriasur.com.ar/*" });
+    
+    if (tabs.length > 0) {
+      try {
+        return await chrome.tabs.sendMessage(tabs[0].id, {
+          action: 'consultarProductoSur',
+          codigoBarras: codigoBarras
+        });
+      } catch (error) {
+        return await crearPestanaYConsultar('sur', codigoBarras);
+      }
+    } else {
+      return await crearPestanaYConsultar('sur', codigoBarras);
+    }
+  } catch (error) {
+    return { error: true, mensaje: 'Error Droguería del Sur: ' + error.message };
+  }
+}
+
 async function crearPestanaYConsultar(drogueria, codigoBarras) {
   return new Promise((resolve) => {
-    const url = drogueria === 'suizo' 
-      ? 'https://web1.suizoargentina.com/stock'
-      : 'https://www.acofarnet.com/iniciar-pedido/';
+    let url, action;
     
-    const action = drogueria === 'suizo' 
-      ? 'consultarProducto'
-      : 'consultarProductoAcofar';
+    if (drogueria === 'suizo') {
+      url = 'https://web1.suizoargentina.com/stock';
+      action = 'consultarProducto';
+    } else if (drogueria === 'acofar') {
+      url = 'https://www.acofarnet.com/iniciar-pedido/';
+      action = 'consultarProductoAcofar';
+    } else if (drogueria === 'sur') {
+      url = 'https://www.drogueriasur.com.ar/ds/carritos/search';
+      action = 'consultarProductoSur';
+    }
 
     chrome.tabs.create({ url, active: false }, async (tab) => {
       console.log(`Pestaña ${drogueria} creada:`, tab.id);
@@ -94,6 +122,8 @@ async function crearPestanaYConsultar(drogueria, codigoBarras) {
       chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
         if (tabId === tab.id && info.status === 'complete') {
           chrome.tabs.onUpdated.removeListener(listener);
+          
+          const delay = drogueria === 'acofar' ? 2000 : drogueria === 'sur' ? 2500 : 1500;
           
           setTimeout(async () => {
             try {
@@ -111,38 +141,73 @@ async function crearPestanaYConsultar(drogueria, codigoBarras) {
                 mensaje: `No se pudo conectar con ${drogueria}. Por favor, inicia sesión.`
               });
             }
-          }, drogueria === 'acofar' ? 2000 : 1500);
+          }, delay);
         }
       });
     });
   });
 }
 
-function compararPrecios(suizo, acofar) {
-  // Si alguno tiene error, no comparar
-  if (suizo.error || acofar.error) {
+function compararPrecios(suizo, acofar, sur) {
+  // Recopilar los precios válidos
+  const precios = [];
+  
+  if (!suizo.error) {
+    precios.push({
+      drogueria: 'suizo',
+      nombre: 'Suizo Argentina',
+      precio: suizo.producto.precioConDescuentoNumerico,
+      detalle: 'Con descuento',
+      datos: suizo.producto
+    });
+  }
+  
+  if (!acofar.error) {
+    precios.push({
+      drogueria: 'acofar',
+      nombre: 'Acofar',
+      precio: acofar.producto.costoUnidadCM,
+      detalle: `Cant. mín: ${acofar.producto.cantidadMinima} un.`,
+      datos: acofar.producto
+    });
+  }
+  
+  if (!sur.error) {
+    precios.push({
+      drogueria: 'sur',
+      nombre: 'Droguería del Sur',
+      precio: sur.producto.precioConDescuento,
+      detalle: sur.producto.porcentajeDescuento > 0 ? `${sur.producto.porcentajeDescuento}% dto` : 'Precio normal',
+      datos: sur.producto
+    });
+  }
+  
+  // Si no hay precios válidos, no comparar
+  if (precios.length === 0) {
     return { hayComparacion: false };
   }
-
-  const precioSuizo = suizo.producto.precioConDescuentoNumerico;
-  const precioAcofarCM = acofar.producto.costoUnidadCM;
-  const precioAcofarSM = acofar.producto.costoUnidadSM;
-  const cantidadMinima = acofar.producto.cantidadMinima;
-
-  // Determinar mejor precio según cantidad mínima
-  const mejorPrecioAcofar = precioAcofarCM; // Asumimos que compra cantidad mínima
-  const diferencia = precioSuizo - mejorPrecioAcofar;
-  const porcentajeDiferencia = (diferencia / precioSuizo) * 100;
-
+  
+  // Ordenar por precio (menor a mayor)
+  precios.sort((a, b) => a.precio - b.precio);
+  
+  // El primero es el más barato
+  const mejorOpcion = precios[0];
+  const peorOpcion = precios[precios.length - 1];
+  
+  // Calcular diferencias
+  const diferencia = peorOpcion.precio - mejorOpcion.precio;
+  const porcentajeDiferencia = (diferencia / peorOpcion.precio) * 100;
+  
   return {
     hayComparacion: true,
-    masConveniente: diferencia > 0 ? 'acofar' : 'suizo',
-    precioSuizo: precioSuizo,
-    precioAcofarCM: precioAcofarCM,
-    precioAcofarSM: precioAcofarSM,
-    cantidadMinima: cantidadMinima,
-    diferencia: Math.abs(diferencia),
-    porcentajeDiferencia: Math.abs(porcentajeDiferencia),
-    descCondicionAcofar: acofar.producto.descCondicion
+    masConveniente: mejorOpcion.drogueria,
+    nombreMejor: mejorOpcion.nombre,
+    precios: precios,
+    diferencia: diferencia,
+    porcentajeDiferencia: porcentajeDiferencia,
+    // Mantener compatibilidad con código anterior
+    precioSuizo: !suizo.error ? suizo.producto.precioConDescuentoNumerico : 0,
+    precioAcofarCM: !acofar.error ? acofar.producto.costoUnidadCM : 0,
+    precioSur: !sur.error ? sur.producto.precioConDescuento : 0
   };
 }

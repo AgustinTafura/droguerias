@@ -5,7 +5,7 @@
 }
 
 body {
-  width: 500px;
+  width: 600px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #333;
@@ -133,13 +133,13 @@ body {
 
 .comparacion-cards {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
   margin-bottom: 15px;
 }
 
 .drogueria-card {
-  padding: 20px;
+  padding: 15px;
   border-radius: 12px;
   text-align: center;
   transition: transform 0.3s, box-shadow 0.3s;
@@ -160,6 +160,11 @@ body {
   color: white;
 }
 
+.sur-card {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  color: white;
+}
+
 .drogueria-card.mejor-precio {
   border-color: #ffd700;
   box-shadow: 0 8px 24px rgba(255, 215, 0, 0.4);
@@ -172,20 +177,20 @@ body {
 }
 
 .drogueria-nombre {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   opacity: 0.9;
 }
 
 .drogueria-precio {
-  font-size: 28px;
+  font-size: 20px;
   font-weight: 700;
   margin-bottom: 5px;
 }
 
 .drogueria-detalle {
-  font-size: 12px;
+  font-size: 11px;
   opacity: 0.85;
 }
 

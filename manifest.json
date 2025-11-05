@@ -11,7 +11,8 @@
   "host_permissions": [
     "https://web1.suizoargentina.com/*",
     "https://*.suizoargentina.com/*",
-    "https://www.acofarnet.com/*"
+    "https://www.acofarnet.com/*",
+    "https://www.drogueriasur.com.ar/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -33,6 +34,11 @@
     {
       "matches": ["https://www.acofarnet.com/*"],
       "js": ["content-acofar.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.drogueriasur.com.ar/*"],
+      "js": ["content-sur.js"],
       "run_at": "document_idle"
     }
   ],

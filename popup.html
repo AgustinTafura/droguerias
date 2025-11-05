@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Consulta Stock</title>
+  <title>Comparador de Droguerías</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>🔍 Consulta Stock</h1>
-      <p class="subtitle">Comparador de Droguerías</p>
+      <h1>🔍 Comparador de Droguerías</h1>
+      <p class="subtitle">Suizo | Acofar | Droguería del Sur</p>
     </div>
 
     <div class="form-group">
@@ -26,7 +26,7 @@
 
     <div id="loading" class="loading hidden">
       <div class="spinner"></div>
-      <p>Consultando ambas droguerías...</p>
+      <p>Consultando las tres droguerías...</p>
     </div>
 
     <div id="error" class="error hidden"></div>
@@ -46,6 +46,11 @@
           <div class="drogueria-nombre">Acofar</div>
           <div class="drogueria-precio" id="precioAcofar">$0.00</div>
           <div class="drogueria-detalle" id="detalleAcofar"></div>
+        </div>
+        <div class="drogueria-card sur-card" id="cardSur">
+          <div class="drogueria-nombre">Droguería del Sur</div>
+          <div class="drogueria-precio" id="precioSur">$0.00</div>
+          <div class="drogueria-detalle" id="detalleSur"></div>
         </div>
       </div>
       <div class="resultado-comparacion" id="resultadoComparacion"></div>
@@ -115,6 +120,41 @@
         <div><strong>Con Cant. Mínima:</strong> <span id="precioCMAcofar" class="precio-destacado"></span></div>
         <div><strong>PVP:</strong> <span id="pvpAcofar"></span></div>
       </div>
+    </div>
+
+    <!-- RESULTADO DROGUERÍA DEL SUR -->
+    <div id="resultadoSur" class="resultado hidden">
+      <div class="resultado-header">
+        <h3>🏥 Droguería del Sur</h3>
+        <span id="stockBadgeSur" class="badge"></span>
+      </div>
+      <h4 id="nombreProductoSur" class="producto-nombre"></h4>
+      
+      <div class="info-grid-small">
+        <div class="info-row">
+          <span class="label">Código:</span>
+          <span id="codigoSur"></span>
+        </div>
+        <div class="info-row" id="troquelRowSur">
+          <span class="label">Troquel:</span>
+          <span id="troquelSur"></span>
+        </div>
+        <div class="info-row">
+          <span class="label">Pack:</span>
+          <span id="packSur" class="destacado"></span>
+        </div>
+        <div class="info-row" id="descuentoRowSur">
+          <span class="label">Descuento:</span>
+          <span id="descuentoSur" class="destacado"></span>
+        </div>
+      </div>
+
+      <div class="precios-mini">
+        <div><strong>Precio Público:</strong> <span id="precioPubSur"></span></div>
+        <div><strong>Con Descuento:</strong> <span id="precioDescSur" class="precio-destacado"></span></div>
+      </div>
+
+      <div class="oferta-detalle" id="ofertaDetalleSur"></div>
     </div>
 
     <div class="historial" id="historial">
