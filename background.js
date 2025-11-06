@@ -27,7 +27,7 @@ async function agregarAlCarritoAcofar(productoData, cantidad) {
     console.log('🛒 Agregando al carrito Acofar:', productoData, cantidad);
     
     // Buscar pestaña de Acofar
-    const tabs = await chrome.tabs.query({ url: "https://www.acofarnet.com/*" });
+    const tabs = await chrome.tabs.query({ url: "https://www.acofarnet.com/iniciar-pedido/*" });
     
     if (tabs.length > 0) {
       // Enviar mensaje al content script existente
@@ -181,22 +181,43 @@ async function consultarSuizo(codigoBarras) {
 
 async function consultarAcofar(codigoBarras) {
   try {
-    const tabs = await chrome.tabs.query({ url: "https://www.acofarnet.com/*" });
+    console.log('🔵 [ACOFAR] Iniciando consulta para:', codigoBarras);
+    const tabs = await chrome.tabs.query({ url: "https://www.acofarnet.com/iniciar-pedido/*" });
+    
+    console.log('🔵 [ACOFAR] Pestañas encontradas:', tabs.length, tabs.map(t => ({
+      id: t.id,
+      url: t.url,
+      status: t.status
+    })));
     
     if (tabs.length > 0) {
       try {
-        return await chrome.tabs.sendMessage(tabs[0].id, {
+        console.log('🔵 [ACOFAR] Intentando enviar mensaje a pestaña existente:', tabs[0].id);
+        
+        // Verificar que la pestaña esté completamente cargada
+        if (tabs[0].status !== 'complete') {
+          console.warn('⚠️ [ACOFAR] Pestaña no completamente cargada, creando nueva');
+          return await crearPestanaYConsultar('acofar', codigoBarras);
+        }
+        
+        const resultado = await chrome.tabs.sendMessage(tabs[0].id, {
           action: 'consultarProductoAcofar',
           codigoBarras: codigoBarras
         });
+        
+        console.log('✅ [ACOFAR] Respuesta recibida:', resultado);
+        return resultado;
+        
       } catch (error) {
-        console.log("error acofar", error);
+        console.error('❌ [ACOFAR] Error al enviar mensaje:', error);
         return await crearPestanaYConsultar('acofar', codigoBarras);
       }
     } else {
+      console.log('🔵 [ACOFAR] No hay pestañas abiertas, creando nueva');
       return await crearPestanaYConsultar('acofar', codigoBarras);
     }
   } catch (error) {
+    console.error('❌ [ACOFAR] Error general:', error);
     return { error: true, mensaje: 'Error Acofar: ' + error.message };
   }
 }
@@ -237,32 +258,79 @@ async function crearPestanaYConsultar(drogueria, codigoBarras) {
       action = 'consultarProductoSur';
     }
 
+    console.log(`🟢 [${drogueria.toUpperCase()}] Creando pestaña temporal:`, url);
+
     chrome.tabs.create({ url, active: false }, async (tab) => {
-      console.log(`Pestaña ${drogueria} creada:`, tab.id);
+      if (chrome.runtime.lastError) {
+        console.error(`❌ [${drogueria.toUpperCase()}] Error al crear pestaña:`, chrome.runtime.lastError);
+        resolve({
+          error: true,
+          mensaje: `Error al crear pestaña de ${drogueria}: ${chrome.runtime.lastError.message}`
+        });
+        return;
+      }
+
+      console.log(`🟢 [${drogueria.toUpperCase()}] Pestaña creada:`, tab.id);
+      
+      // Timeout de seguridad
+      const timeoutId = setTimeout(() => {
+        console.error(`⏱️ [${drogueria.toUpperCase()}] Timeout esperando carga de página`);
+        chrome.tabs.remove(tab.id).catch(() => {});
+        resolve({
+          error: true,
+          mensaje: `Timeout esperando carga de ${drogueria}`
+        });
+      }, 15000); // 15 segundos máximo
       
       chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
-        if (tabId === tab.id && info.status === 'complete') {
-          chrome.tabs.onUpdated.removeListener(listener);
+        if (tabId === tab.id) {
+          console.log(`🔄 [${drogueria.toUpperCase()}] Estado pestaña:`, info.status, info.url);
           
-          const delay = drogueria === 'acofar' ? 2000 : drogueria === 'sur' ? 2500 : 1500;
-          
-          setTimeout(async () => {
-            try {
-              const resultado = await chrome.tabs.sendMessage(tab.id, {
-                action: action,
-                codigoBarras: codigoBarras
-              });
-              
-              setTimeout(() => chrome.tabs.remove(tab.id), 1000);
-              resolve(resultado);
-            } catch (error) {
-              chrome.tabs.remove(tab.id);
-              resolve({
-                error: true,
-                mensaje: `No se pudo conectar con ${drogueria}. Por favor, inicia sesión.`
-              });
-            }
-          }, delay);
+          if (info.status === 'complete') {
+            chrome.tabs.onUpdated.removeListener(listener);
+            clearTimeout(timeoutId);
+            
+            const delay = drogueria === 'acofar' ? 2000 : drogueria === 'sur' ? 2500 : 1500;
+            
+            console.log(`⏳ [${drogueria.toUpperCase()}] Esperando ${delay}ms antes de consultar...`);
+            
+            setTimeout(async () => {
+              try {
+                console.log(`📤 [${drogueria.toUpperCase()}] Enviando mensaje:`, {
+                  action,
+                  codigoBarras,
+                  tabId: tab.id
+                });
+                
+                const resultado = await chrome.tabs.sendMessage(tab.id, {
+                  action: action,
+                  codigoBarras: codigoBarras
+                });
+                
+                console.log(`✅ [${drogueria.toUpperCase()}] Resultado recibido:`, resultado);
+                
+                setTimeout(() => {
+                  console.log(`🗑️ [${drogueria.toUpperCase()}] Cerrando pestaña temporal`);
+                  chrome.tabs.remove(tab.id).catch(() => {});
+                }, 1000);
+                
+                resolve(resultado);
+                
+              } catch (error) {
+                console.error(`❌ [${drogueria.toUpperCase()}] Error al enviar mensaje:`, {
+                  error: error.message,
+                  stack: error.stack
+                });
+                
+                chrome.tabs.remove(tab.id).catch(() => {});
+                resolve({
+                  error: true,
+                  mensaje: `No se pudo conectar con ${drogueria}. Por favor, inicia sesión.`,
+                  detalleError: error.message
+                });
+              }
+            }, delay);
+          }
         }
       });
     });
